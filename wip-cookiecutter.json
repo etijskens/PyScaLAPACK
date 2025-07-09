@@ -1,0 +1,9 @@
+{
+  "full_name": "Engelbert Tijskens",
+  "email_address": "engelbert.tijskens@uantwerpen.be",
+  "github_username": "etijskens",
+  "project_name": "PyScaLAPACK",
+  "package_name": "pyscalapack",
+  "project_short_description": "a fork of [PyScalapack](https://pypi.org/project/PyScalapack/)",
+  "minimal_python_version": "3.9"
+}
