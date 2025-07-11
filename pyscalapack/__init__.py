@@ -16,7 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 import os
 import sys
@@ -254,7 +254,7 @@ class Array(ArrayDesc):
         super().__init__(1, context.ictxt, m, n, mb, nb, 0, 0, 0)
         # Record the owner context
         self.context = context
-        # Get the local row and colmn in the current process
+        # Get the local row and column in the current process
         self.local_m = self.context.scalapack.numroc(self.c_m, self.c_mb, context.myrow, Scalapack.zero, context.nprow)
         self.local_n = self.context.scalapack.numroc(self.c_n, self.c_nb, context.mycol, Scalapack.zero, context.npcol)
         # lld is just the row of the local array for the fortran style.
@@ -287,6 +287,59 @@ class Array(ArrayDesc):
             else:
                 # Just a placeholder, the current process is out of the grid.
                 self.data = np.zeros([1, 1], dtype=dtype, order=order)
+
+    def col_indxl2g(self, jl):
+        """
+        Wrapper around scalapack.indxl2g(jl,bf,context.mycol.value,0,npcol)
+
+        Parameters
+        ----------
+        jl : int 
+            local column index in the Fortran context, so it is 1-based!
+
+        Returns
+        -------
+        j : int
+            global column index in the Fortran context, so it is 1-based!
+        """
+        j = self.context.scalapack.indxl2g(jl,self.c_nb,self.context.mycol.value,0,self.context.npcol.value)
+        return j
+
+    def row_indxl2g(self, il):
+        """
+        Wrapper around scalapack.indxl2g(jl,bf,context.mycol.value,0,npcol)
+
+        Parameters
+        ----------
+        il : int 
+            local column index in the Fortran context, so it is 1-based!
+
+        Returns
+        -------
+        i : int
+            global column index in the Fortran context, so it is 1-based!
+        """
+        i = self.context.scalapack.indxl2g(il,self.c_mb,self.context.myrow.value,0,self.context.nprow.value)
+        return i
+    
+    def pdgemr2d(self,dest):
+        """
+        A wrapper around scalapack.pdgemr2d
+        """
+        # we must use the context encompassing all ranks of both contexts. 
+        # That should be the one with the most ranks. (a bit tricky, I admit)
+        src_context = self.context
+        dst_context = dest.context
+        src_size = src_context.nprow.value * src_context.npcol.value 
+        dst_size = dst_context.nprow.value * dst_context.npcol.value
+        context = src_context if src_size > dst_size else dst_context
+
+        self.context.scalapack.pdgemr2d(
+            self.c_m.value, self.c_n.value, 
+            *self.scalapack_params(),
+            *dest.scalapack_params(),
+            context.ictxt,
+        )
 
     def scalapack_params(self):
         """
@@ -432,7 +485,6 @@ class Scalapack():
         """
         Resolve argument as the fortran style: pass by reference by default, except indicated by `Val`.
         """
-        print(f"{arg=}")
         if isinstance(arg, cls.Val):
             # This argument is specified to pass by value
             return arg.value

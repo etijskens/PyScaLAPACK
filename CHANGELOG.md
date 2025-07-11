@@ -1,5 +1,8 @@
 **unreleased**
 
+- Added row and column wrappers for indxl2g
+- Added a wrapper for pdgemr2d
+
 **v0.0.1**
 - in `Scalapack._resolve_args(cls,arg))` add case for converting Numpy arrays to Fortran functions. Arguments of type `np.ndarray` can be passed as:
 
