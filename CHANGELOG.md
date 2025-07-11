@@ -1,5 +1,11 @@
 **unreleased**
 
+
+
+**v0.0.3**
+
+- Added wrapper for pdsyev
+
 **v0.0.2**
 
 - Added row and column wrappers for indxl2g

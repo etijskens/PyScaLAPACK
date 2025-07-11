@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "PyScaLAPACK"
-version = "0.0.2"
+version = "0.0.3"
 description = "A fork of [PyScalapack](https://pypi.org/project/PyScalapack/)"
 authors = ["Engelbert Tijskens <engelbert.tijskens@uantwerpen.be>"]
 license = "MIT"
