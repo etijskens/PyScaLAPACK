@@ -1,6 +1,6 @@
 **unreleased**
 
-**v0.0.1**
+**v0.0.2**
 
 - Added row and column wrappers for indxl2g
 - Added a wrapper for pdgemr2d
