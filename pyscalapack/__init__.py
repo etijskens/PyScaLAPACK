@@ -290,7 +290,8 @@ class Array(ArrayDesc):
 
     def col_indxl2g(self, jl):
         """
-        Wrapper around scalapack.indxl2g(jl,bf,context.mycol.value,0,npcol)
+        Wrapper around scalapack.indxl2g to convert the local index
+        into a column into its global index.
 
         Parameters
         ----------
@@ -307,24 +308,26 @@ class Array(ArrayDesc):
 
     def row_indxl2g(self, il):
         """
-        Wrapper around scalapack.indxl2g(jl,bf,context.mycol.value,0,npcol)
+        Wrapper around scalapack.indxl2g to convert the local index
+        into a row into its global index.
 
         Parameters
         ----------
         il : int 
-            local column index in the Fortran context, so it is 1-based!
+            local row index in the Fortran context, so it is 1-based!
 
         Returns
         -------
         i : int
-            global column index in the Fortran context, so it is 1-based!
+            global row index in the Fortran context, so it is 1-based!
         """
         i = self.context.scalapack.indxl2g(il,self.c_mb,self.context.myrow.value,0,self.context.nprow.value)
         return i
     
     def pdgemr2d(self,dest):
         """
-        A wrapper around scalapack.pdgemr2d
+        A wrapper around scalapack.pdgemr2d. Called on the source of the transfer, and with de destination 
+        passed as an argument.
         """
         # we must use the context encompassing all ranks of both contexts. 
         # That should be the one with the most ranks. (a bit tricky, I admit)
