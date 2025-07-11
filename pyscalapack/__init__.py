@@ -344,6 +344,56 @@ class Array(ArrayDesc):
             context.ictxt,
         )
 
+    def pdsyev(self,eigenvalues=None,eigenvectors=None):
+        """
+        Wrapper for scalapack.pdsyev
+
+        Parameters
+        ----------
+        eigenvalues : numpy array of length na or None
+            eigenvalues will be stored here
+
+        eigenvectors : Distributed 2D array na x na or None
+            eigenvectors will be stored here
+
+        Returns
+        -------
+        tuple : (eigenvalues,eigenvectors,info)
+        """
+        na = self.c_m.value
+
+        ev = eigenvalues  if not eigenvalues  is None else np.zeros(na, dtype=float) 
+        EV = eigenvectors if not eigenvectors is None else self.context.array(na, na, self.c_mb.value, self.c_nb.value, dtype=float)
+        
+        work = np.array([0.0])
+        lwork = -1
+        info = np.array([1]) # an ordinary Python variable cannot be used as an output argument.
+
+        self.context.scalapack.pdsyev(
+            b'V', b'L', na,
+            *self.scalapack_params(),
+            ev,
+            *EV.scalapack_params(),
+            work, lwork,
+            info
+        )
+        lwork = int(work[0])
+        # print(f"{lwork=}")
+        work = np.zeros(lwork,dtype=float,order='F')
+        self.context.scalapack.pdsyev(
+            b'V', b'L', na,
+            *self.scalapack_params(),
+            ev,
+            *EV.scalapack_params(),
+            work, lwork,
+            info
+        )
+        if info[0] != 0:
+            print(f"[{self.context.rank.value}/{selfcontext.size.value}] ({self.context.myrow.value},{self.context.mycol.value}): distributed solution did not converge {info=}.", file=sys.stderr)
+
+        return (ev,EV,info)
+
+
     def scalapack_params(self):
         """
         Get parameters use to pass to scalapack. Scalapack usually take matrix as parameter with the following format.
