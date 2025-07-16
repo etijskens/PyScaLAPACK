@@ -23,6 +23,7 @@ import sys
 import ctypes
 import numpy as np
 
+_DBG = False
 
 class Context():
     """
@@ -489,23 +490,25 @@ class Scalapack():
             raise RuntimeError(f"layout should be b'R' or b'C' but it is {layout}.")
         return Context(self, layout, nprow, npcol)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name, suffix='_'):
         """
         Get a function from the scalapack library, and wrap it by fortran function wrapper.
 
         Parameters
         ----------
         name : str
-            The function name, without sufix "_" in fortran function.
+            The function name, without suffix "_" in fortran function.
 
         Returns
         -------
             The function wrapped by fortran function wrapper.
         """
         # All function will be cached in function_database
+        if _DBG:
+            print(f"looking for function {name}")
         if name not in self.function_database:
-            # Get the real function name since fortran function has a sufix "_" in its name.
-            real_name = name + "_"
+            # Get the real function name since fortran function has a suffix "_" in its name.
+            real_name = name + suffix
             # Look it up in all libraries
             for lib in self.libs:
                 # If it is in a library
@@ -538,20 +541,36 @@ class Scalapack():
         """
         Resolve argument as the fortran style: pass by reference by default, except indicated by `Val`.
         """
+        # if _DBG:
+        #     print(f"_resolve_arg : {type(arg)=} {arg=}") # for debugging
         if isinstance(arg, cls.Val):
+            if _DBG:
+                print(f"_resolve_arg : {type(arg)=} {arg.value=} cls.Val") # for debugging
             # This argument is specified to pass by value
             return arg.value
         elif isinstance(arg, int):
+            if _DBG:
+                print(f"_resolve_arg : {type(arg)=} {arg=} int") # for debugging
             # This is a python int, wrap it in c_int
             arg = ctypes.c_int(arg)
             return ctypes.byref(arg)
         elif isinstance(arg, bytes):
+            if _DBG:
+                print(f"_resolve_arg : {type(arg)=} {arg=} bytes") # for debugging
             # This is a python bytes, wrap it in c_char_p
             arg = ctypes.c_char_p(arg)
             return arg
         elif isinstance(arg, np.ndarray):
+            if _DBG:
+                print(f"_resolve_arg : {type(arg)=} {arg=} np.ndarray") # for debugging
             return arg.ctypes.data_as(ctypes.c_void_p)
+        elif isinstance(arg, ctypes.c_void_p):
+            if _DBG:
+                print(f"_resolve_arg : {type(arg)=} {arg=} ctypes.c_void_p") # for debugging
+            return arg.value
         else:
+            if _DBG:
+                print(f"_resolve_arg : {type(arg)=} {arg.value=} else") # for debugging
             # This must be already a ctypes object, get the reference.
             return ctypes.byref(arg)
 
@@ -566,6 +585,8 @@ class Scalapack():
         """
 
         def result(*args):
+            if _DBG:
+                print(f"{len(args)} arguments")
             return function(*(cls._resolve_arg(arg) for arg in args))
 
         result.__doc__ = function.__doc__
