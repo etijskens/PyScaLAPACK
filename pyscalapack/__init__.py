@@ -363,7 +363,7 @@ class Array(ArrayDesc):
         """
         na = self.c_m.value
 
-        ev = eigenvalues  if not eigenvalues  is None else np.zeros(na, dtype=float) 
+        ev = eigenvalues  if not eigenvalues  is None else np.empty(na, dtype=float) 
         EV = eigenvectors if not eigenvectors is None else self.context.array(na, na, self.c_mb.value, self.c_nb.value, dtype=float)
         
         work = np.array([0.0])
@@ -487,7 +487,7 @@ class Scalapack():
             The created blacs Context.
         """
         if layout not in [b'R', b'C']:
-            raise RuntimeError(f"layout should be b'R' or b'C' but it is {layout}.")
+            raise ValueError(f"layout should be b'R' or b'C' but it is {layout}.")
         return Context(self, layout, nprow, npcol)
 
     def __getattr__(self, name, suffix='_'):
